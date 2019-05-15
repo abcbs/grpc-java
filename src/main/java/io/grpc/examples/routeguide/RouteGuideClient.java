@@ -1,19 +1,3 @@
-/*
- * Copyright 2015 The gRPC Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package io.grpc.examples.routeguide;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -22,9 +6,9 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import io.grpc.stub.StreamObserver;
 import io.grpc.examples.routeguide.RouteGuideGrpc.RouteGuideBlockingStub;
 import io.grpc.examples.routeguide.RouteGuideGrpc.RouteGuideStub;
-import io.grpc.stub.StreamObserver;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
@@ -59,12 +43,17 @@ public class RouteGuideClient {
     asyncStub = RouteGuideGrpc.newStub(channel);
   }
 
+  /**
+   * 常规架构操作
+   * @throws InterruptedException
+   */
   public void shutdown() throws InterruptedException {
     channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
   }
 
   /**
    * 一个简单RPC
+   * 阻塞调用
    * 客户端使用存根发送请求到服务器并等待响应返回。
    * Blocking unary call example.
    * Calls getFeature and prints the response.
@@ -76,6 +65,7 @@ public class RouteGuideClient {
 
     Feature feature;
     try {
+      //RPC操作
       feature = blockingStub.getFeature(request);
       if (testHelper != null) {
         testHelper.onMessage(feature);
@@ -87,6 +77,7 @@ public class RouteGuideClient {
       }
       return;
     }
+    //业务处理
     if (RouteGuideUtil.exists(feature)) {
       info("Found feature called \"{0}\" at {1}, {2}",
           feature.getName(),
@@ -102,6 +93,7 @@ public class RouteGuideClient {
   /**
    * 服务器端流式RPC
    * 客户端读取返回的流，直到里面没有任何消息。
+   * 阻塞服务端流
    * Blocking server-streaming example.
    * Calls listFeatures with a rectangle of interest. Prints each
    * response feature as it arrives.
@@ -116,6 +108,7 @@ public class RouteGuideClient {
             .setHi(Point.newBuilder().setLatitude(hiLat).setLongitude(hiLon).build()).build();
     Iterator<Feature> features;
     try {
+      //阻塞发送
       features = blockingStub.listFeatures(request);
       for (int i = 1; features.hasNext(); i++) {
         Feature feature = features.next();
@@ -137,7 +130,7 @@ public class RouteGuideClient {
    * 客户端写入一个消息序列并将其发送到服务器，同样也是使用流。
    * 一旦客户端完成写入消息，它等待服务器完成读取返回它的响应。
    * 通过在请求类型前指定 stream 关键字来指定一个客户端的流方法。
-   *
+   * 异步客户端流
    * Async client-streaming example. Sends {@code numPoints} randomly chosen points from {@code
    * features} with a variable delay in between. Prints the statistics when they are sent from the
    * server.
@@ -145,8 +138,13 @@ public class RouteGuideClient {
   public void recordRoute(List<Feature> features, int numPoints) throws InterruptedException {
     info("*** RecordRoute");
     final CountDownLatch finishLatch = new CountDownLatch(1);
+    //流观察者模式
     StreamObserver<RouteSummary> responseObserver = new StreamObserver<RouteSummary>() {
-      //覆写onNext() 方法，在服务器把RouteSummary写入到消息流时，打印出返回的信息。
+
+      /**
+       * 覆写onNext() 方法，在服务器把RouteSummary写入到消息流时，打印出返回的信息。
+       * @param summary
+       */
       @Override
       public void onNext(RouteSummary summary) {
         info("Finished trip with {0} points. Passed {1} features. "
@@ -157,8 +155,13 @@ public class RouteGuideClient {
         }
       }
 
+      /**
+       * 错误处理方法
+       * @param t
+       */
       @Override
       public void onError(Throwable t) {
+
         warning("RecordRoute Failed: {0}", Status.fromThrowable(t));
         if (testHelper != null) {
           testHelper.onRpcError(t);
@@ -166,8 +169,10 @@ public class RouteGuideClient {
         finishLatch.countDown();
       }
 
-      // 覆写onCompleted()方法（在服务器完成自己的调用时调用）去设置SettableFuture，
-      // 这样我们可以检查服务器是不是完成写入。
+      /**
+       * 覆写onCompleted()方法（在服务器完成自己的调用时调用）去设置SettableFuture，
+       * 这样我们可以检查服务器是不是完成写入。
+       */
       @Override
       public void onCompleted() {
         info("Finished RecordRoute");
@@ -177,6 +182,7 @@ public class RouteGuideClient {
 
     //将StreamObserver传给异步存根的recordRoute()方法
     //拿到我们自己的StreamObserver请求观察者将Point发给服务器。
+    //RPC
     StreamObserver<Point> requestObserver = asyncStub.recordRoute(responseObserver);
     try {
       // Send numPoints points randomly selected from the features list.
@@ -186,6 +192,7 @@ public class RouteGuideClient {
         info("Visiting point {0}, {1}", RouteGuideUtil.getLatitude(point),
             RouteGuideUtil.getLongitude(point));
         //Send numPoints
+        //发送数据到服务端
         requestObserver.onNext(point);
         // Sleep for a bit before sending the next one.
         Thread.sleep(random.nextInt(1000) + 500);
@@ -201,6 +208,7 @@ public class RouteGuideClient {
       throw e;
     }
     // Mark the end of requests
+    //标记请求发送结束
     //一旦完成点的写入，我们使用请求观察者的onCompleted()
     //方法告诉gRPC我们已经完成了客户端的写入。
     requestObserver.onCompleted();
@@ -213,6 +221,7 @@ public class RouteGuideClient {
 
   /**
    * 双向流式RPC
+   * 异步操作
    * 双方使用读写流去发送一个消息序列。两个流独立操作，
    * 因此客户端和服务器，可以以任意喜欢的顺序读写。
    * 比如， 服务器可以在写入响应前等待接收所有的客户端消息，
@@ -226,11 +235,13 @@ public class RouteGuideClient {
   public CountDownLatch routeChat() {
     info("*** RouteChat");
     final CountDownLatch finishLatch = new CountDownLatch(1);
+    //异步流处理的定义
     StreamObserver<RouteNote> requestObserver =
         asyncStub.routeChat(new StreamObserver<RouteNote>() {
           @Override
           public void onNext(RouteNote note) {
-            info("Got message \"{0}\" at {1}, {2}", note.getMessage(), note.getLocation()
+            info("Got message \"{0}\" at {1}, {2}",
+                    note.getMessage(), note.getLocation()
                 .getLatitude(), note.getLocation().getLongitude());
             if (testHelper != null) {
               testHelper.onMessage(note);
@@ -239,7 +250,8 @@ public class RouteGuideClient {
 
           @Override
           public void onError(Throwable t) {
-            warning("RouteChat Failed: {0}", Status.fromThrowable(t));
+            warning("RouteChat Failed: {0}",
+                    Status.fromThrowable(t));
             if (testHelper != null) {
               testHelper.onRpcError(t);
             }
@@ -254,14 +266,15 @@ public class RouteGuideClient {
         });
 
     try {
+      //客户端发送数据
       RouteNote[] requests =
           {newNote("First message", 0, 0), newNote("Second message", 0, 1),
               newNote("Third message", 1, 0), newNote("Fourth message", 1, 1)};
-
+      //
       for (RouteNote request : requests) {
         info("Sending message \"{0}\" at {1}, {2}", request.getMessage(), request.getLocation()
             .getLatitude(), request.getLocation().getLongitude());
-        requestObserver.onNext(request);
+        requestObserver.onNext(request);//发送数据
       }
     } catch (RuntimeException e) {
       // Cancel RPC
@@ -269,6 +282,7 @@ public class RouteGuideClient {
       throw e;
     }
     // Mark the end of requests
+    //结束标志
     requestObserver.onCompleted();
 
     // return the latch while receiving happens asynchronously

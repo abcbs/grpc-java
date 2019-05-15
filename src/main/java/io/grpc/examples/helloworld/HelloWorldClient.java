@@ -1,19 +1,3 @@
-/*
- * Copyright 2015 The gRPC Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package io.grpc.examples.helloworld;
 
 import io.grpc.ManagedChannel;
@@ -32,7 +16,9 @@ public class HelloWorldClient {
   private final ManagedChannel channel;
   private final GreeterGrpc.GreeterBlockingStub blockingStub;
 
-  /** Construct client connecting to HelloWorld server at {@code host:port}. */
+  /** Construct client connecting to HelloWorld server at {@code host:port}.
+   * 常规架构代码
+   */
   public HelloWorldClient(String host, int port) {
     this(ManagedChannelBuilder.forAddress(host, port)
         // Channels are secure by default (via SSL/TLS). For the example we disable TLS to avoid
@@ -47,11 +33,17 @@ public class HelloWorldClient {
     blockingStub = GreeterGrpc.newBlockingStub(channel);
   }
 
+  /**
+   * 常规架构代码
+   * @throws InterruptedException
+   */
   public void shutdown() throws InterruptedException {
     channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
   }
 
-  /** Say hello to server. */
+  /** Say hello to server.
+   * RPC、业务代码实现
+   */
   public void greet(String name) {
     logger.info("Will try to greet " + name + " ...");
     HelloRequest request = HelloRequest.newBuilder().setName(name).build();
@@ -66,8 +58,7 @@ public class HelloWorldClient {
   }
 
   /**
-   * Greet server. If provided, the first element of {@code args} is the name to use in the
-   * greeting.
+   * Greet server.
    */
   public static void main(String[] args) throws Exception {
     HelloWorldClient client = new HelloWorldClient("localhost", 50051);

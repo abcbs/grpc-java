@@ -27,7 +27,6 @@ import com.google.protobuf.Message;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.examples.routeguide.RouteGuideClient.TestHelper;
-import io.grpc.examples.routeguide.RouteGuideGrpc.RouteGuideImplBase;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
@@ -114,8 +113,8 @@ public class RouteGuideClientTest {
         Feature.newBuilder().setName("dummyFeature").setLocation(responsePoint).build();
 
     // implement the fake service
-    RouteGuideImplBase getFeatureImpl =
-        new RouteGuideImplBase() {
+    RouteGuideGrpc.RouteGuideImplBase getFeatureImpl =
+        new RouteGuideGrpc.RouteGuideImplBase() {
           @Override
           public void getFeature(Point point, StreamObserver<Feature> responseObserver) {
             pointDelivered.set(point);
@@ -142,8 +141,8 @@ public class RouteGuideClientTest {
     final StatusRuntimeException fakeError = new StatusRuntimeException(Status.DATA_LOSS);
 
     // implement the fake service
-    RouteGuideImplBase getFeatureImpl =
-        new RouteGuideImplBase() {
+    RouteGuideGrpc.RouteGuideImplBase getFeatureImpl =
+        new RouteGuideGrpc.RouteGuideImplBase() {
           @Override
           public void getFeature(Point point, StreamObserver<Feature> responseObserver) {
             pointDelivered.set(point);
@@ -170,8 +169,8 @@ public class RouteGuideClientTest {
     final AtomicReference<Rectangle> rectangleDelivered = new AtomicReference<Rectangle>();
 
     // implement the fake service
-    RouteGuideImplBase listFeaturesImpl =
-        new RouteGuideImplBase() {
+    RouteGuideGrpc.RouteGuideImplBase listFeaturesImpl =
+        new RouteGuideGrpc.RouteGuideImplBase() {
           @Override
           public void listFeatures(Rectangle rectangle, StreamObserver<Feature> responseObserver) {
             rectangleDelivered.set(rectangle);
@@ -209,8 +208,8 @@ public class RouteGuideClientTest {
     final StatusRuntimeException fakeError = new StatusRuntimeException(Status.INVALID_ARGUMENT);
 
     // implement the fake service
-    RouteGuideImplBase listFeaturesImpl =
-        new RouteGuideImplBase() {
+    RouteGuideGrpc.RouteGuideImplBase listFeaturesImpl =
+        new RouteGuideGrpc.RouteGuideImplBase() {
           @Override
           public void listFeatures(Rectangle rectangle, StreamObserver<Feature> responseObserver) {
             rectangleDelivered.set(rectangle);
@@ -264,8 +263,8 @@ public class RouteGuideClientTest {
         .build();
 
     // implement the fake service
-    RouteGuideImplBase recordRouteImpl =
-        new RouteGuideImplBase() {
+    RouteGuideGrpc.RouteGuideImplBase recordRouteImpl =
+        new RouteGuideGrpc.RouteGuideImplBase() {
           @Override
           public StreamObserver<Point> recordRoute(
               final StreamObserver<RouteSummary> responseObserver) {
@@ -318,8 +317,8 @@ public class RouteGuideClientTest {
     final StatusRuntimeException fakeError = new StatusRuntimeException(Status.INVALID_ARGUMENT);
 
     // implement the fake service
-    RouteGuideImplBase recordRouteImpl =
-        new RouteGuideImplBase() {
+    RouteGuideGrpc.RouteGuideImplBase recordRouteImpl =
+        new RouteGuideGrpc.RouteGuideImplBase() {
           @Override
           public StreamObserver<Point> recordRoute(StreamObserver<RouteSummary> responseObserver) {
             // send an error immediately
@@ -363,8 +362,8 @@ public class RouteGuideClientTest {
         new AtomicReference<StreamObserver<RouteNote>>();
     final CountDownLatch allRequestsDelivered = new CountDownLatch(1);
     // implement the fake service
-    RouteGuideImplBase routeChatImpl =
-        new RouteGuideImplBase() {
+    RouteGuideGrpc.RouteGuideImplBase routeChatImpl =
+        new RouteGuideGrpc.RouteGuideImplBase() {
           @Override
           public StreamObserver<RouteNote> routeChat(StreamObserver<RouteNote> responseObserver) {
             responseObserverRef.set(responseObserver);
@@ -431,8 +430,8 @@ public class RouteGuideClientTest {
     final List<RouteNote> notesDelivered = new ArrayList<>();
 
     // implement the fake service
-    RouteGuideImplBase routeChatImpl =
-        new RouteGuideImplBase() {
+    RouteGuideGrpc.RouteGuideImplBase routeChatImpl =
+        new RouteGuideGrpc.RouteGuideImplBase() {
           @Override
           public StreamObserver<RouteNote> routeChat(
               final StreamObserver<RouteNote> responseObserver) {
@@ -480,8 +479,8 @@ public class RouteGuideClientTest {
     final StatusRuntimeException fakeError = new StatusRuntimeException(Status.PERMISSION_DENIED);
 
     // implement the fake service
-    RouteGuideImplBase routeChatImpl =
-        new RouteGuideImplBase() {
+    RouteGuideGrpc.RouteGuideImplBase routeChatImpl =
+        new RouteGuideGrpc.RouteGuideImplBase() {
           @Override
           public StreamObserver<RouteNote> routeChat(
               final StreamObserver<RouteNote> responseObserver) {

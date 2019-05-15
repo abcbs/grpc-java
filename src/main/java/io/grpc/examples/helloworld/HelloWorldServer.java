@@ -1,19 +1,3 @@
-/*
- * Copyright 2015 The gRPC Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package io.grpc.examples.helloworld;
 
 import io.grpc.Server;
@@ -41,14 +25,20 @@ public class HelloWorldServer {
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
       public void run() {
-        // Use stderr here since the logger may have been reset by its JVM shutdown hook.
-        System.err.println("*** shutting down gRPC server since JVM is shutting down");
+        // Use stderr here since the logger
+        // may have been reset by its JVM shutdown hook.
+        // 常规架构代码
+        System.err.println("*** shutting down gRPC " +
+                "server since JVM is shutting down");
         HelloWorldServer.this.stop();
         System.err.println("*** server shut down");
       }
     });
   }
 
+  /**
+   * 常规架构代码
+   */
   private void stop() {
     if (server != null) {
       server.shutdown();
@@ -57,6 +47,7 @@ public class HelloWorldServer {
 
   /**
    * Await termination on the main thread since the grpc library uses daemon threads.
+   * 常规架构代码
    */
   private void blockUntilShutdown() throws InterruptedException {
     if (server != null) {
@@ -73,6 +64,9 @@ public class HelloWorldServer {
     server.blockUntilShutdown();
   }
 
+  /**
+   * 业务实现代码
+   */
   static class GreeterImpl extends GreeterGrpc.GreeterImplBase {
 
     @Override

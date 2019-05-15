@@ -1,19 +1,3 @@
-/*
- * Copyright 2015 The gRPC Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package io.grpc.examples.routeguide;
 
 import static java.lang.Math.atan2;
@@ -40,7 +24,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A sample gRPC server that serve the RouteGuide (see route_guide.proto) service.
+ * A sample gRPC server that serve the RouteGuide
+ * (see route_guide.proto) service.
  */
 public class RouteGuideServer {
   private static final Logger logger = Logger.getLogger(RouteGuideServer.class.getName());
@@ -52,7 +37,9 @@ public class RouteGuideServer {
     this(port, RouteGuideUtil.getDefaultFeaturesFile());
   }
 
-  /** Create a RouteGuide server listening on {@code port} using {@code featureFile} database. */
+  /**
+   * Create a RouteGuide server listening on {@code port} using {@code featureFile} database.
+   */
   public RouteGuideServer(int port, URL featureFile) throws IOException {
     this(ServerBuilder.forPort(port), port, RouteGuideUtil.parseFeatures(featureFile));
   }
@@ -68,6 +55,7 @@ public class RouteGuideServer {
   public void start() throws IOException {
     server.start();
     logger.info("Server started, listening on " + port);
+    //架构常规代码
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
       public void run() {
@@ -79,7 +67,9 @@ public class RouteGuideServer {
     });
   }
 
-  /** Stop serving requests and shutdown resources. */
+  /** Stop serving requests and shutdown resources.
+   * 架构常规代码
+   */
   public void stop() {
     if (server != null) {
       server.shutdown();
@@ -88,6 +78,7 @@ public class RouteGuideServer {
 
   /**
    * Await termination on the main thread since the grpc library uses daemon threads.
+   * 架构常规代码
    */
   private void blockUntilShutdown() throws InterruptedException {
     if (server != null) {
@@ -106,10 +97,10 @@ public class RouteGuideServer {
 
   /**
    *
-   * 要定义一个服务，你必须在你的.proto文件中指定service
+   * 要定义一个服务，必须在你的.proto文件中指定service
    * Our implementation of RouteGuide service.
-   *
    * <p>See route_guide.proto for details of the methods.
+   * 服务方法由.proto完成
    */
   private static class RouteGuideService extends RouteGuideGrpc.RouteGuideImplBase {
     private final Collection<Feature> features;
@@ -123,7 +114,8 @@ public class RouteGuideServer {
     /**
      * 一个简单RPC
      * 客户端使用存根发送请求到服务器并等待响应返回。
-     * Gets the {@link Feature} at the requested {@link Point}. If no feature at that location
+     * Gets the {@link Feature} at the requested {@link Point}.
+     * If no feature at that location
      * exists, an unnamed feature is returned at the provided location.
      *
      * @param request the requested location for the feature.
@@ -131,6 +123,8 @@ public class RouteGuideServer {
      */
     @Override
     public void getFeature(Point request, StreamObserver<Feature> responseObserver) {
+      //request已经获取了数据。
+
       //使用应答观察者的 onNext() 方法返回 Feature。
       responseObserver.onNext(checkFeature(request));
       //使用应答观察者的 onCompleted() 方法来指出我们已经完成了和 RPC的交互。
@@ -149,6 +143,8 @@ public class RouteGuideServer {
      */
     @Override
     public void listFeatures(Rectangle request, StreamObserver<Feature> responseObserver) {
+      //request数据已经获取
+
       int left = min(request.getLo().getLongitude(), request.getHi().getLongitude());
       int right = max(request.getLo().getLongitude(), request.getHi().getLongitude());
       int top = max(request.getLo().getLatitude(), request.getHi().getLatitude());
@@ -238,18 +234,21 @@ public class RouteGuideServer {
      */
     @Override
     public StreamObserver<RouteNote> routeChat(final StreamObserver<RouteNote> responseObserver) {
+      //服务端接收数据添加到
       return new StreamObserver<RouteNote>() {
         @Override
         public void onNext(RouteNote note) {
           List<RouteNote> notes = getOrCreateNotes(note.getLocation());
           // Respond with all previous notes at this location.
+          // 响应数据
           for (RouteNote prevNote : notes.toArray(new RouteNote[0])) {
-            //在客户端仍然写入消息到它们的消息流，通过我们方法的应答观察者返回值。
+            //在客户端仍然写入消息到它们的消息流，通过此方法调用应答观察者返回值。
             //响应客户端
             responseObserver.onNext(prevNote);
           }
 
           // Now add the new note to the list
+          //
           notes.add(note);
         }
 
